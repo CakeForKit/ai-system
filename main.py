@@ -3,7 +3,7 @@
 Читает books.csv и строит отдельные тепловые карты матриц сходства
 по каждой из мер близости.
 На осях: "№. Название (значение признака)".
-Добавлена сортировка книг по осям.
+Добавлена сортировка книг по осям и комбинированная мера.
 """
 
 import os
@@ -26,6 +26,20 @@ SORT_BY_SIMILARITY = True          # True — сортировать книги 
 #   "mean"  — по среднему сходству с остальными (чем выше, тем «центральнее»)
 #   "pca"   — по первой главной компоненте матрицы сходства (похожие рядом)
 SORT_METHOD = "mean"
+
+# ----------------------- 0b. Веса комбинированной меры -----------------------
+# Сумма весов должна быть равна 1.0
+W = {
+    "tax":      0.35,   # таксономия
+    "cycle":    0.05,   # часть цикла (покомпонентно)
+    "trans":    0.05,   # перевод (покомпонентно)
+    "year":     0.10,   # год публикации
+    "pages":    0.05,   # количество страниц
+    "age":      0.10,   # возрастное ограничение
+    "title":    0.15,   # название
+    "author":   0.15,   # автор
+}
+assert abs(sum(W.values()) - 1.0) < 1e-9, "Сумма весов должна быть 1.0"
 
 # ----------------------- 1. Загрузка -----------------------
 df = pd.read_csv(CSV_PATH, sep=";", encoding="utf-8")
@@ -86,6 +100,13 @@ def sim_bin(i, j):
     b2 = np.array([df.loc[j, "Часть цикла"], df.loc[j, "Перевод"]])
     return float(np.mean(b1 == b2))
 
+# -------- Покомпонентные бинарные меры (для комбинированной) --------
+def sim_cycle(i, j):
+    return 1.0 if df.loc[i, "Часть цикла"] == df.loc[j, "Часть цикла"] else 0.0
+
+def sim_trans(i, j):
+    return 1.0 if df.loc[i, "Перевод"] == df.loc[j, "Перевод"] else 0.0
+
 def sim_age_lim(i, j):
     return sim_age_limit(df.loc[i, "Возраст"], df.loc[j, "Возраст"], tau=6.0)
 
@@ -102,6 +123,23 @@ def sim_title(i, j):
     if not t1 and not t2:
         return 1.0
     return 1.0 - lev_distance(t1, t2) / max(len(t1), len(t2))
+
+# ----------------------- 2b. Комбинированная мера -----------------------
+def sim_combined(i, j):
+    """
+    Sim(d_i, d_j) = Σ_k w_k · sim_k(d_i, d_j)
+    Веса w_k заданы в словаре W и нормированы (Σ w_k = 1).
+    """
+    return (
+        W["tax"]    * sim_tax(i, j)      +
+        W["cycle"]  * sim_cycle(i, j)    +
+        W["trans"]  * sim_trans(i, j)    +
+        W["year"]   * sim_year(df.loc[i, "Год публикации"], df.loc[j, "Год публикации"]) +
+        W["pages"]  * sim_pages(df.loc[i, "Страницы"], df.loc[j, "Страницы"]) +
+        W["age"]    * sim_age_lim(i, j)  +
+        W["title"]  * sim_title(i, j)    +
+        W["author"] * sim_author(i, j)
+    )
 
 # ----------------------- 3. Построение матриц -----------------------
 def build_matrix(fn):
@@ -152,6 +190,13 @@ matrices = {
         "matrix": build_matrix(sim_title),
         "values": df["Название"].tolist(),
     },
+    # >>> КОМБИНИРОВАННАЯ МЕРА <<<
+        # >>> КОМБИНИРОВАННАЯ МЕРА <<<
+    "combined": {
+        "title": "Комбинированная мера (Σ wₖ · simₖ)",
+        "matrix": build_matrix(sim_combined),
+        "values": [""] * N,   # без вывода значений параметров
+    },
 }
 
 # ----------------------- 4. Функция сортировки -----------------------
@@ -163,12 +208,12 @@ def get_order(M, method="mean"):
     """
     if method == "mean":
         scores = M.mean(axis=1)
-        return list(np.argsort(-scores))          # самые «похожие на всех» — в центр/начало
+        return list(np.argsort(-scores))
     elif method == "pca":
-        Mc = M - M.mean(axis=0, keepdims=True)    # центрируем
+        Mc = M - M.mean(axis=0, keepdims=True)
         U, S, Vt = np.linalg.svd(Mc, full_matrices=False)
-        pc1 = U[:, 0] * S[0]                       # проекция на 1-ю ГК
-        return list(np.argsort(pc1))               # сортируем по возрастанию
+        pc1 = U[:, 0] * S[0]
+        return list(np.argsort(pc1))
     else:
         raise ValueError(f"Неизвестный метод сортировки: {method}")
 
