@@ -3,6 +3,7 @@
 Читает books.csv и строит отдельные тепловые карты матриц сходства
 по каждой из мер близости.
 На осях: "№. Название (значение признака)".
+Добавлена сортировка книг по осям.
 """
 
 import os
@@ -17,6 +18,14 @@ from Levenshtein import distance as lev_distance  # pip install python-Levenshte
 CSV_PATH = "books.csv"
 OUT_DIR = "heatmaps"
 os.makedirs(OUT_DIR, exist_ok=True)
+
+# >>> ФЛАГ СОРТИРОВКИ <<<
+SORT_BY_SIMILARITY = True          # True — сортировать книги по осям, False — исходный порядок
+
+# Способ сортировки:
+#   "mean"  — по среднему сходству с остальными (чем выше, тем «центральнее»)
+#   "pca"   — по первой главной компоненте матрицы сходства (похожие рядом)
+SORT_METHOD = "mean"
 
 # ----------------------- 1. Загрузка -----------------------
 df = pd.read_csv(CSV_PATH, sep=";", encoding="utf-8")
@@ -145,19 +154,51 @@ matrices = {
     },
 }
 
-# ----------------------- 4. Тепловые карты (по одной на файл) -----------------------
+# ----------------------- 4. Функция сортировки -----------------------
+def get_order(M, method="mean"):
+    """
+    Возвращает список индексов, задающий порядок книг по осям.
+    method="mean" — по среднему сходству с остальными (по убыванию).
+    method="pca"  — по первой главной компоненте (по возрастанию, чтобы кластеры шли подряд).
+    """
+    if method == "mean":
+        scores = M.mean(axis=1)
+        return list(np.argsort(-scores))          # самые «похожие на всех» — в центр/начало
+    elif method == "pca":
+        Mc = M - M.mean(axis=0, keepdims=True)    # центрируем
+        U, S, Vt = np.linalg.svd(Mc, full_matrices=False)
+        pc1 = U[:, 0] * S[0]                       # проекция на 1-ю ГК
+        return list(np.argsort(pc1))               # сортируем по возрастанию
+    else:
+        raise ValueError(f"Неизвестный метод сортировки: {method}")
+
+# ----------------------- 5. Тепловые карты -----------------------
 sns.set_theme(style="white")
 
 for key, info in matrices.items():
+    M = info["matrix"]
+    values = info["values"]
+
+    # --- сортировка осей ---
+    if SORT_BY_SIMILARITY:
+        order = get_order(M, method=SORT_METHOD)
+        M_plot = M[np.ix_(order, order)]
+        values_plot = [values[i] for i in order]
+        idx_plot = [i for i in order]
+    else:
+        M_plot = M
+        values_plot = values
+        idx_plot = list(range(N))
+
     # Подписи: "№. Название (значение признака)"
     labels = [
-        f"{i+1}. {df.loc[i, 'Название']} ({info['values'][i]})"
-        for i in range(N)
+        f"{idx_plot[k]+1}. {df.loc[idx_plot[k], 'Название']} ({values_plot[k]})"
+        for k in range(N)
     ]
 
     fig, ax = plt.subplots(figsize=(18, 15))
     sns.heatmap(
-        info["matrix"],
+        M_plot,
         ax=ax,
         cmap="viridis",
         vmin=0, vmax=1,
@@ -166,7 +207,8 @@ for key, info in matrices.items():
         cbar_kws={"label": "Сходство"},
         square=True,
     )
-    ax.set_title(info["title"], fontsize=20, pad=18)
+    suffix = f" [sorted by {SORT_METHOD}]" if SORT_BY_SIMILARITY else ""
+    ax.set_title(info["title"] + suffix, fontsize=20, pad=18)
     ax.tick_params(axis="x", rotation=90, labelsize=12)
     ax.tick_params(axis="y", rotation=0,  labelsize=12)
 
