@@ -1,0 +1,24 @@
+:root { color-scheme: light; font-family: Inter, Arial, sans-serif; color: #19202a; background: #f4f6f8; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.header { min-height: 64px; display: flex; align-items: center; gap: 28px; padding: 0 6vw; background: #172335; color: white; }
+.brand { margin-right: auto; font-weight: 750; color: white; text-decoration: none; }
+nav { display: flex; gap: 18px; } nav a { color: #dce7f5; text-decoration: none; }
+.counters { font-size: .9rem; color: #dce7f5; }
+main { max-width: 1420px; margin: 32px auto; padding: 0 24px; }
+.search-panel, .results { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 5px #1723351a; }
+.results { margin-top: 24px; } h1, h2 { margin: 0 0 18px; }
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; gap: 14px; }
+label { display: grid; gap: 6px; color: #4a5668; font-size: .84rem; }
+input, select, button { border: 1px solid #b7c1cf; border-radius: 6px; padding: 9px; font: inherit; }
+button { cursor: pointer; border: 0; background: #2862ab; color: white; font-weight: 650; }
+.errors { margin: 16px 0 0; padding: 12px 30px; border-radius: 6px; color: #9d2020; background: #fff0f0; }
+.results-heading { display: flex; align-items: center; gap: 12px; } .results-heading span { color: #657082; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.book-card { border: 1px solid #dfe4eb; border-radius: 9px; padding: 16px; }
+.book-title { font-size: 1.05rem; font-weight: 720; } .author { margin-top: 6px; color: #596578; }
+dl { margin: 14px 0; } dl div { display: flex; gap: 8px; margin: 5px 0; } dt { color: #657082; } dd { margin: 0; }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; } .actions form { margin: 0; }
+.like { background: #207754; } .dislike { background: #9d3b43; } .reaction, .score { color: #596578; font-size: .9rem; }
+.notice { padding: 16px; border-radius: 6px; background: #eef5ff; color: #234b7d; }
+@media (max-width: 680px) { .header { padding: 16px 24px; flex-wrap: wrap; } nav { order: 3; width: 100%; } }
