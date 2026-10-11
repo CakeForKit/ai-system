@@ -10,7 +10,7 @@ import secrets
 import time
 from typing import Annotated
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -220,6 +220,26 @@ async def feedback(request: Request, book_id: int, action: Annotated[str, Form()
     state[f"{action}s"][book_id] = time.time()
     logger.info("Feedback: book_id=%s; action=%s", book_id, action)
     return RedirectResponse(return_to, status_code=303)
+
+
+@app.get("/recommendations/{book_id}/explanation")
+async def recommendation_explanation(request: Request, book_id: int) -> dict[str, object]:
+    if book_id not in set(books["id"]):
+        raise HTTPException(status_code=404, detail="Книга не найдена.")
+    state = user_state(request)
+    if not state["likes"]:
+        raise HTTPException(status_code=400, detail="Для объяснения нужен хотя бы один лайк.")
+    if book_id in state["likes"] or book_id in state["dislikes"]:
+        raise HTTPException(status_code=400, detail="Оценённые книги не входят в ленту рекомендаций.")
+
+    breakdown = recommender.relevance_breakdown(book_id, state["likes"], state["dislikes"], time.time())
+    titles = books.set_index("id")["Название"].to_dict()
+    for reaction_type in ("likes", "dislikes"):
+        for item in breakdown[reaction_type]:
+            item["title"] = str(titles[item["book_id"]])
+    breakdown["candidate"] = {"id": book_id, "title": str(titles[book_id])}
+    logger.info("Recommendation explanation: book_id=%s", book_id)
+    return breakdown
 
 
 @app.get("/recommendations", response_class=HTMLResponse)

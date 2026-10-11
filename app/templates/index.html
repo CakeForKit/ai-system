@@ -63,6 +63,7 @@
             </dl>
             {% if book.score is not none %}<p class="score">Релевантность: {{ '%.3f'|format(book.score) }}</p>{% endif %}
             <div class="actions">
+              {% if view == 'recommendations' and book.score is not none %}<button class="explain" type="button" data-explain-book="{{ book.id }}">Почему рекомендовано?</button>{% endif %}
               <form action="/feedback/{{ book.id }}" method="post"><input type="hidden" name="action" value="like"><input type="hidden" name="return_to" value="{% if view == 'recommendations' %}/recommendations{% else %}/{% endif %}"><button class="like" type="submit"><span class="reaction-icon" aria-hidden="true">♥</span>Нравится</button></form>
               <form action="/feedback/{{ book.id }}" method="post"><input type="hidden" name="action" value="dislike"><input type="hidden" name="return_to" value="{% if view == 'recommendations' %}/recommendations{% else %}/{% endif %}"><button class="dislike" type="submit"><span class="reaction-icon" aria-hidden="true">×</span>Не нравится</button></form>
               {% if book.reaction %}<span class="reaction">Ваш выбор: {{ 'лайк' if book.reaction == 'like' else 'дизлайк' }}</span>{% endif %}
@@ -73,5 +74,42 @@
       {% elif not errors %}<p class="notice">По заданным ограничениям книги не найдены.</p>{% endif %}
     </section>
   </main>
+  <dialog class="explanation-modal" id="explanation-modal">
+    <div class="modal-top"><h2>Почему рекомендовано</h2><button class="modal-close" type="button" aria-label="Закрыть">×</button></div>
+    <div id="explanation-content"></div>
+  </dialog>
+  <script>
+    const modal = document.getElementById("explanation-modal");
+    const content = document.getElementById("explanation-content");
+    const number = value => Number(value).toFixed(4);
+    const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
+    const reactionList = (items, emptyText) => items.length ? `<ul class="explanation-list">${items.map(item => `<li><strong>${escapeHtml(item.title)}</strong><span>Sim = ${number(item.similarity)} · w = ${number(item.weight)} · w × Sim = ${number(item.contribution)}</span></li>`).join("")}</ul>` : `<p class="empty-reactions">${emptyText}</p>`;
+
+    document.querySelectorAll("[data-explain-book]").forEach(button => {
+      button.addEventListener("click", async () => {
+        content.innerHTML = "<p class='loading'>Считаем вклад реакций…</p>";
+        modal.showModal();
+        try {
+          const response = await fetch(`/recommendations/${button.dataset.explainBook}/explanation`);
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || "Не удалось получить объяснение.");
+          const negativeTerm = data.negative_denominator
+            ? `(${number(data.negative_numerator)} / ${number(data.negative_denominator)})`
+            : "0.0000";
+          content.innerHTML = `
+            <p class="candidate">Рекомендация: <strong>${escapeHtml(data.candidate.title)}</strong></p>
+            <h3>Лайки</h3>${reactionList(data.likes, "Лайков пока нет.")}
+            <p class="formula-part">Положительная часть: ${number(data.positive_numerator)} / ${number(data.positive_denominator)} = <strong>${number(data.positive)}</strong></p>
+            <h3>Дизлайки</h3>${reactionList(data.dislikes, "Дизлайков нет: штраф равен нулю.")}
+            <p class="formula-part">Отрицательная часть: ${negativeTerm} = <strong>${number(data.negative)}</strong></p>
+            <p class="final-formula">R(i) = ${number(data.positive)} − ${number(data.penalty)} × ${number(data.negative)} = <strong>${number(data.score)}</strong></p>`;
+        } catch (error) {
+          content.innerHTML = `<p class="modal-error">${escapeHtml(error.message)}</p>`;
+        }
+      });
+    });
+    document.querySelector(".modal-close").addEventListener("click", () => modal.close());
+    modal.addEventListener("click", event => { if (event.target === modal) modal.close(); });
+  </script>
 </body>
 </html>

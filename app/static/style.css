@@ -85,9 +85,28 @@ dd { margin: 0; color: #554640; font-size: .84rem; }
 .like:hover { background: linear-gradient(135deg, #6d8d66, #557851); }
 .dislike { border-color: #d8a89d !important; background: linear-gradient(135deg, #bc7e70, #a9695e); box-shadow: 0 4px 9px #9d584036; }
 .dislike:hover { background: linear-gradient(135deg, #aa6c60, #94564e); }
+.explain { border-color: #d0ac73 !important; color: #765327; background: #f8edd9; box-shadow: none; }
+.explain:hover { color: #60421e; background: #f0debf; }
 .reaction, .score { color: #81746b; font-size: .84rem; }
 .score { margin: 13px 0; color: #66745f; font-weight: 700; }
 .notice { padding: 16px; border: 1px solid #d6e0d0; border-radius: 10px; color: #576d52; background: #f0f5ec; }
+
+.explanation-modal { width: min(690px, calc(100vw - 32px)); max-height: min(78vh, 760px); overflow: auto; padding: 25px; border: 1px solid #ead8c7; border-radius: 17px; color: #55433b; background: #fffaf3; box-shadow: 0 20px 70px #321c1280; }
+.explanation-modal::backdrop { background: #2f1e18a3; backdrop-filter: blur(3px); }
+.modal-top { display: flex; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1px solid #eaded0; }
+.modal-top h2 { margin-bottom: 14px; }
+.modal-close { min-width: 34px; padding: 2px 9px 6px; border-radius: 50%; color: #70554c; background: #f2e3d6; box-shadow: none; font-size: 1.4rem; line-height: 1; }
+.modal-close:hover { background: #e8cdbc; }
+.candidate { margin: 18px 0; font-size: 1.02rem; }
+.explanation-modal h3 { margin: 20px 0 9px; color: #765343; font-family: "Playfair Display", Georgia, serif; }
+.explanation-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.explanation-list li { display: grid; gap: 3px; padding: 10px 12px; border-left: 3px solid #c9a487; border-radius: 0 8px 8px 0; background: #f8eee4; }
+.explanation-list span, .formula-part { color: #77655c; font-size: .88rem; }
+.empty-reactions { padding: 10px 12px; border-radius: 8px; color: #6d7966; background: #eef3e9; }
+.formula-part { margin: 11px 0; }
+.final-formula { margin: 22px 0 0; padding: 14px; border-radius: 10px; color: #55402f; background: #f0e0ca; font-family: "Playfair Display", Georgia, serif; font-size: 1.04rem; }
+.modal-error { color: #943f39; }
+.loading { color: #80695c; }
 
 @media (max-width: 700px) {
   .header { gap: 14px; padding: 16px 24px; flex-wrap: wrap; }

@@ -135,6 +135,50 @@ class ContentRecommender:
     def _recency_weight(action_time: float, now: float) -> float:
         return 2 ** (-(max(0.0, now - action_time) / RECENCY_HALF_LIFE_SECONDS))
 
+    def relevance_breakdown(
+        self,
+        candidate_id: int,
+        likes: dict[int, float],
+        dislikes: dict[int, float],
+        now: float,
+    ) -> dict[str, object]:
+        """Возвращает слагаемые PCv3-формулы для объяснения рекомендации."""
+        def contributions(reactions: dict[int, float]) -> list[dict[str, float | int]]:
+            result = []
+            for book_id, action_time in reactions.items():
+                weight = self._recency_weight(action_time, now)
+                similarity = self.similarity(book_id, candidate_id)
+                result.append(
+                    {
+                        "book_id": book_id,
+                        "weight": weight,
+                        "similarity": similarity,
+                        "contribution": weight * similarity,
+                    }
+                )
+            return result
+
+        like_items = contributions(likes)
+        dislike_items = contributions(dislikes)
+        positive_numerator = sum(float(item["contribution"]) for item in like_items)
+        negative_numerator = sum(float(item["contribution"]) for item in dislike_items)
+        positive_denominator = sum(float(item["weight"]) for item in like_items)
+        negative_denominator = sum(float(item["weight"]) for item in dislike_items)
+        positive = positive_numerator / positive_denominator if positive_denominator else 0.0
+        negative = negative_numerator / negative_denominator if negative_denominator else 0.0
+        return {
+            "likes": like_items,
+            "dislikes": dislike_items,
+            "positive_numerator": positive_numerator,
+            "positive_denominator": positive_denominator,
+            "positive": positive,
+            "negative_numerator": negative_numerator,
+            "negative_denominator": negative_denominator,
+            "negative": negative,
+            "penalty": DISLIKE_PENALTY,
+            "score": positive - DISLIKE_PENALTY * negative,
+        }
+
     def rank(
         self,
         likes: dict[int, float],
@@ -146,25 +190,14 @@ class ContentRecommender:
         if not likes:
             return []
 
-        liked_weights = {book_id: self._recency_weight(moment, now) for book_id, moment in likes.items()}
-        disliked_weights = {book_id: self._recency_weight(moment, now) for book_id, moment in dislikes.items()}
-        liked_weight_sum = sum(liked_weights.values())
-        disliked_weight_sum = sum(disliked_weights.values())
         excluded = set(likes) | set(dislikes)
         ranked: list[RankedBook] = []
 
         for candidate_id in range(1, self.size + 1):
             if candidate_id in excluded:
                 continue
-            positive = sum(weight * self.similarity(like_id, candidate_id) for like_id, weight in liked_weights.items())
-            negative = sum(
-                weight * self.similarity(dislike_id, candidate_id)
-                for dislike_id, weight in disliked_weights.items()
-            )
-            score = positive / liked_weight_sum
-            if disliked_weight_sum:
-                score -= DISLIKE_PENALTY * negative / disliked_weight_sum
-            ranked.append(RankedBook(candidate_id, score))
+            breakdown = self.relevance_breakdown(candidate_id, likes, dislikes, now)
+            ranked.append(RankedBook(candidate_id, float(breakdown["score"])))
 
         ranked.sort(key=lambda item: item.score, reverse=True)
         return ranked if limit is None else ranked[:limit]
