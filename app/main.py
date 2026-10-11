@@ -19,6 +19,22 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.recommender import ContentRecommender, prepare_books, to_public_books
 
 
+# ----------------------- Параметры модели PCv3 -----------------------
+SIMILARITY_WEIGHTS = {
+    "tax": 0.35,
+    "cycle": 0.05,
+    "translation": 0.05,
+    "year": 0.10,
+    "pages": 0.05,
+    "age": 0.10,
+    "title": 0.15,
+    "author": 0.15,
+}
+LIKE_MAX_SIMILARITY_WEIGHT = 0.7  # α
+DISLIKE_PENALTY = 1.0             # λ
+TIME_DECAY_TAU_SECONDS = 30.0     # τ
+TIME_DECAY_MIN_WEIGHT = 0.1       # ε
+
 APP_DIR = Path(__file__).resolve().parent
 ROOT_DIR = APP_DIR.parent
 BOOKS_PATH = ROOT_DIR / "books.csv"
@@ -34,7 +50,14 @@ if not logger.handlers:
     logger.addHandler(handler)
 
 books = prepare_books(str(BOOKS_PATH))
-recommender = ContentRecommender(books)
+recommender = ContentRecommender(
+    books,
+    similarity_weights=SIMILARITY_WEIGHTS,
+    like_max_similarity_weight=LIKE_MAX_SIMILARITY_WEIGHT,
+    dislike_penalty=DISLIKE_PENALTY,
+    time_decay_tau_seconds=TIME_DECAY_TAU_SECONDS,
+    time_decay_min_weight=TIME_DECAY_MIN_WEIGHT,
+)
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 
 

@@ -99,7 +99,7 @@
           content.innerHTML = `
             <p class="candidate">Рекомендация: <strong>${escapeHtml(data.candidate.title)}</strong></p>
             <h3>Лайки</h3>${reactionList(data.likes, "Лайков пока нет.")}
-            <p class="formula-part">Положительная часть: ${number(data.positive_numerator)} / ${number(data.positive_denominator)} = <strong>${number(data.positive)}</strong></p>
+            <p class="formula-part">Положительная часть: ${number(data.alpha)} × max(${number(data.like_max_similarity)}) + (1 − ${number(data.alpha)}) × (${number(data.positive_numerator)} / ${number(data.positive_denominator)}) = <strong>${number(data.positive)}</strong></p>
             <h3>Дизлайки</h3>${reactionList(data.dislikes, "Дизлайков нет: штраф равен нулю.")}
             <p class="formula-part">Отрицательная часть: ${negativeTerm} = <strong>${number(data.negative)}</strong></p>
             <p class="final-formula">R(i) = ${number(data.positive)} − ${number(data.penalty)} × ${number(data.negative)} = <strong>${number(data.score)}</strong></p>`;

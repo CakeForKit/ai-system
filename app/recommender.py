@@ -6,25 +6,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from math import exp, log
 import re
-from typing import Iterable
+from typing import Iterable, Mapping
 
 import pandas as pd
 import torch
 import torch.nn.functional as functional
-
-
-WEIGHTS = {
-    "tax": 0.35,
-    "cycle": 0.05,
-    "translation": 0.05,
-    "year": 0.10,
-    "pages": 0.05,
-    "age": 0.10,
-    "title": 0.15,
-    "author": 0.15,
-}
-DISLIKE_PENALTY = 1.0
-RECENCY_HALF_LIFE_SECONDS = 24 * 60 * 60
 
 
 def tokenize_title(title: object) -> list[str]:
@@ -49,8 +35,21 @@ class RankedBook:
 class ContentRecommender:
     """Вычисляет комбинированную близость книг из books.csv."""
 
-    def __init__(self, books: pd.DataFrame) -> None:
+    def __init__(
+        self,
+        books: pd.DataFrame,
+        similarity_weights: Mapping[str, float],
+        like_max_similarity_weight: float,
+        dislike_penalty: float,
+        time_decay_tau_seconds: float,
+        time_decay_min_weight: float,
+    ) -> None:
         self.books = books.reset_index(drop=True).copy()
+        self.weights = dict(similarity_weights)
+        self.like_max_similarity_weight = like_max_similarity_weight
+        self.dislike_penalty = dislike_penalty
+        self.time_decay_tau_seconds = time_decay_tau_seconds
+        self.time_decay_min_weight = time_decay_min_weight
         self.size = len(self.books)
         self.now_year = datetime.now().year
         self.min_year = int(self.books["Год публикации"].min())
@@ -121,19 +120,26 @@ class ContentRecommender:
         translation = float(self.books.at[first, "_translation"] == self.books.at[second, "_translation"])
         title = 1.0 if not self.title_tokens[first] and not self.title_tokens[second] else float(self.title_similarity[first, second])
         return (
-            WEIGHTS["tax"] * self._sim_taxonomy(first, second)
-            + WEIGHTS["cycle"] * cycle
-            + WEIGHTS["translation"] * translation
-            + WEIGHTS["year"] * self._sim_year(first, second)
-            + WEIGHTS["pages"] * self._sim_pages(first, second)
-            + WEIGHTS["age"] * self._sim_age(first, second)
-            + WEIGHTS["title"] * title
-            + WEIGHTS["author"] * self._sim_author(first, second)
+            self.weights["tax"] * self._sim_taxonomy(first, second)
+            + self.weights["cycle"] * cycle
+            + self.weights["translation"] * translation
+            + self.weights["year"] * self._sim_year(first, second)
+            + self.weights["pages"] * self._sim_pages(first, second)
+            + self.weights["age"] * self._sim_age(first, second)
+            + self.weights["title"] * title
+            + self.weights["author"] * self._sim_author(first, second)
         )
 
-    @staticmethod
-    def _recency_weight(action_time: float, now: float) -> float:
-        return 2 ** (-(max(0.0, now - action_time) / RECENCY_HALF_LIFE_SECONDS))
+    def _recency_weight(self, action_time: float, now: float, first_action_time: float) -> float:
+        """Логарифмическое затухание из формулы PCv3 в README."""
+        elapsed_since_first = max(0.0, now - first_action_time)
+        if elapsed_since_first == 0:
+            return 1.0
+        denominator = log(1 + elapsed_since_first / self.time_decay_tau_seconds)
+        elapsed_since_action = max(0.0, now - action_time)
+        numerator = log(1 + elapsed_since_action / self.time_decay_tau_seconds)
+        weight = self.time_decay_min_weight + (1 - self.time_decay_min_weight) * (1 - numerator / denominator)
+        return min(1.0, max(self.time_decay_min_weight, weight))
 
     def relevance_breakdown(
         self,
@@ -143,10 +149,13 @@ class ContentRecommender:
         now: float,
     ) -> dict[str, object]:
         """Возвращает слагаемые PCv3-формулы для объяснения рекомендации."""
+        all_action_times = [*likes.values(), *dislikes.values()]
+        first_action_time = min(all_action_times) if all_action_times else now
+
         def contributions(reactions: dict[int, float]) -> list[dict[str, float | int]]:
             result = []
             for book_id, action_time in reactions.items():
-                weight = self._recency_weight(action_time, now)
+                weight = self._recency_weight(action_time, now, first_action_time)
                 similarity = self.similarity(book_id, candidate_id)
                 result.append(
                     {
@@ -164,19 +173,27 @@ class ContentRecommender:
         negative_numerator = sum(float(item["contribution"]) for item in dislike_items)
         positive_denominator = sum(float(item["weight"]) for item in like_items)
         negative_denominator = sum(float(item["weight"]) for item in dislike_items)
-        positive = positive_numerator / positive_denominator if positive_denominator else 0.0
+        weighted_average = positive_numerator / positive_denominator if positive_denominator else 0.0
+        maximum_similarity = max((float(item["similarity"]) for item in like_items), default=0.0)
+        positive = (
+            self.like_max_similarity_weight * maximum_similarity
+            + (1 - self.like_max_similarity_weight) * weighted_average
+        )
         negative = negative_numerator / negative_denominator if negative_denominator else 0.0
         return {
             "likes": like_items,
             "dislikes": dislike_items,
             "positive_numerator": positive_numerator,
             "positive_denominator": positive_denominator,
+            "like_max_similarity": maximum_similarity,
+            "like_weighted_average": weighted_average,
             "positive": positive,
             "negative_numerator": negative_numerator,
             "negative_denominator": negative_denominator,
             "negative": negative,
-            "penalty": DISLIKE_PENALTY,
-            "score": positive - DISLIKE_PENALTY * negative,
+            "alpha": self.like_max_similarity_weight,
+            "penalty": self.dislike_penalty,
+            "score": positive - self.dislike_penalty * negative,
         }
 
     def rank(
