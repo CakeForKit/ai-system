@@ -7,16 +7,18 @@
 """
 
 import os
+import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import torch  # pip install torch
+import torch.nn.functional as F
 from math import log, exp
-from Levenshtein import distance as lev_distance  # pip install python-Levenshtein
 
 # ----------------------- 0. Настройки -----------------------
 CSV_PATH = "books.csv"
-OUT_DIR = "heatmaps"
+OUT_DIR = "heatmaps/heatmap_imgs"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # >>> ФЛАГ СОРТИРОВКИ <<<
@@ -118,11 +120,33 @@ def sim_author(i, j):
     B = authors_set(df.loc[j, "Автор"])
     return len(A & B) / len(A | B) if (A | B) else 0.0
 
+# -------- Названия: TF-IDF + cosine similarity (PyTorch) --------
+def tokenize_title(title):
+    """Нормализует название и выделяет слова и числа как отдельные токены."""
+    normalized = str(title).lower().replace("ё", "е")
+    return re.findall(r"[^\W_]+", normalized, flags=re.UNICODE)
+
+
+title_tokens = [tokenize_title(title) for title in df["Название"]]
+title_vocabulary = sorted({token for tokens in title_tokens for token in tokens})
+title_token_index = {token: index for index, token in enumerate(title_vocabulary)}
+
+# TF: число вхождений токена в названии; IDF снижает вклад частых слов.
+title_tf = torch.zeros((N, len(title_vocabulary)), dtype=torch.float32)
+for row_index, tokens in enumerate(title_tokens):
+    for token in tokens:
+        title_tf[row_index, title_token_index[token]] += 1
+
+title_document_frequency = (title_tf > 0).sum(dim=0)
+title_idf = torch.log((N + 1) / (title_document_frequency + 1)) + 1
+title_tfidf = title_tf * title_idf
+title_vectors = F.normalize(title_tfidf, p=2, dim=1)
+title_similarity_matrix = torch.clamp(title_vectors @ title_vectors.T, 0.0, 1.0)
+
 def sim_title(i, j):
-    t1, t2 = str(df.loc[i, "Название"]), str(df.loc[j, "Название"])
-    if not t1 and not t2:
+    if not title_tokens[i] and not title_tokens[j]:
         return 1.0
-    return 1.0 - lev_distance(t1, t2) / max(len(t1), len(t2))
+    return float(title_similarity_matrix[i, j])
 
 # ----------------------- 2b. Комбинированная мера -----------------------
 def sim_combined(i, j):
@@ -186,7 +210,7 @@ matrices = {
         "values": df["Автор"].tolist(),
     },
     "title_sim": {
-        "title": "Название (Левенштейн)",
+        "title": "Название (TF-IDF + cosine)",
         "matrix": build_matrix(sim_title),
         "values": df["Название"].tolist(),
     },
