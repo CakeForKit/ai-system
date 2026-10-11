@@ -15,7 +15,7 @@ body {
   background:
     radial-gradient(circle at 8% 0%, #f2dfca 0, transparent 26rem),
     radial-gradient(circle at 96% 12%, #dce5d7 0, transparent 24rem),
-    #f8f3eb;
+    url("/static/library-lamps.png") center / cover fixed no-repeat;
 }
 
 .header {
@@ -25,8 +25,8 @@ body {
   gap: 30px;
   padding: 0 7vw;
   color: #fffaf4;
-  background: #70554c;
-  box-shadow: 0 3px 14px #583a3129;
+  background: transparent;
+  box-shadow: none;
 }
 
 .brand {
@@ -37,17 +37,17 @@ body {
   font-weight: 700;
   letter-spacing: .01em;
   text-decoration: none;
+  text-shadow: 0 2px 8px #332018b8;
 }
 
 nav { display: flex; gap: 8px; }
-nav a { padding: 8px 12px; border-radius: 999px; color: #f8e9d9; font-size: .9rem; text-decoration: none; transition: background .18s ease, color .18s ease; }
-nav a:hover { color: #fff; background: #ffffff1c; }
-.counters { padding: 7px 11px; border: 1px solid #f6ddd04d; border-radius: 999px; color: #f9e9d9; font-size: .84rem; }
+nav a { padding: 8px 12px; border-radius: 999px; color: #fffaf4; font-size: .9rem; font-weight: 700; text-decoration: none; text-shadow: 0 2px 7px #332018b8; transition: background .18s ease, color .18s ease; }
+nav a:hover { color: #fff; background: #3e281d73; }
 
 main { max-width: 1440px; margin: 38px auto 54px; padding: 0 26px; }
-.search-panel, .results { border: 1px solid #eaded0; border-radius: 18px; background: #fffdf9d9; box-shadow: 0 10px 28px #6a4a3a12; }
-.search-panel { padding: 27px 28px 29px; }
-.results { margin-top: 26px; padding: 28px; }
+.search-panel, .results { border: 1px solid #eaded0; border-radius: 18px; background: #fffdf9e8; box-shadow: 0 10px 28px #6a4a3a18; }
+.search-panel { padding: 27px 28px 29px; background: #fffdf9ad; backdrop-filter: blur(4px); }
+.results { margin-top: 26px; padding: 28px; background: #fffdf9ad; backdrop-filter: blur(4px); }
 
 h1, h2 { margin: 0 0 20px; color: #513c35; font-family: "Playfair Display", Georgia, serif; font-weight: 700; letter-spacing: -.015em; }
 h1 { font-size: clamp(1.55rem, 2.5vw, 2rem); }
@@ -79,11 +79,12 @@ dt { min-width: 92px; color: #8a786d; font-size: .82rem; }
 dd { margin: 0; color: #554640; font-size: .84rem; }
 .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .actions form { margin: 0; }
-.actions button { padding: 8px 11px; font-size: .84rem; }
-.like { background: #72906c; box-shadow: 0 3px 7px #58785331; }
-.like:hover { background: #5e7959; }
-.dislike { background: #b27669; box-shadow: 0 3px 7px #9d58402b; }
-.dislike:hover { background: #995d52; }
+.actions button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid transparent; border-radius: 999px; font-size: .82rem; letter-spacing: .01em; }
+.reaction-icon { display: inline-grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: #ffffff2e; font-size: .95rem; line-height: 1; }
+.like { border-color: #a6c29d !important; background: linear-gradient(135deg, #799b71, #62855d); box-shadow: 0 4px 9px #58785336; }
+.like:hover { background: linear-gradient(135deg, #6d8d66, #557851); }
+.dislike { border-color: #d8a89d !important; background: linear-gradient(135deg, #bc7e70, #a9695e); box-shadow: 0 4px 9px #9d584036; }
+.dislike:hover { background: linear-gradient(135deg, #aa6c60, #94564e); }
 .reaction, .score { color: #81746b; font-size: .84rem; }
 .score { margin: 13px 0; color: #66745f; font-weight: 700; }
 .notice { padding: 16px; border: 1px solid #d6e0d0; border-radius: 10px; color: #576d52; background: #f0f5ec; }
@@ -91,7 +92,6 @@ dd { margin: 0; color: #554640; font-size: .84rem; }
 @media (max-width: 700px) {
   .header { gap: 14px; padding: 16px 24px; flex-wrap: wrap; }
   nav { order: 3; width: 100%; }
-  .counters { margin-left: auto; }
   main { margin-top: 24px; padding: 0 15px; }
   .search-panel, .results { padding: 20px 17px; }
 }

@@ -13,7 +13,6 @@
       <a href="/">Каталог</a>
       <a href="/recommendations">Рекомендации</a>
     </nav>
-    <div class="counters">♥ {{ likes_count }} · × {{ dislikes_count }}</div>
   </header>
 
   <main>
@@ -64,8 +63,8 @@
             </dl>
             {% if book.score is not none %}<p class="score">Релевантность: {{ '%.3f'|format(book.score) }}</p>{% endif %}
             <div class="actions">
-              <form action="/feedback/{{ book.id }}" method="post"><input type="hidden" name="action" value="like"><input type="hidden" name="return_to" value="{% if view == 'recommendations' %}/recommendations{% else %}/{% endif %}"><button class="like" type="submit">♥ Лайк</button></form>
-              <form action="/feedback/{{ book.id }}" method="post"><input type="hidden" name="action" value="dislike"><input type="hidden" name="return_to" value="{% if view == 'recommendations' %}/recommendations{% else %}/{% endif %}"><button class="dislike" type="submit">× Дизлайк</button></form>
+              <form action="/feedback/{{ book.id }}" method="post"><input type="hidden" name="action" value="like"><input type="hidden" name="return_to" value="{% if view == 'recommendations' %}/recommendations{% else %}/{% endif %}"><button class="like" type="submit"><span class="reaction-icon" aria-hidden="true">♥</span>Нравится</button></form>
+              <form action="/feedback/{{ book.id }}" method="post"><input type="hidden" name="action" value="dislike"><input type="hidden" name="return_to" value="{% if view == 'recommendations' %}/recommendations{% else %}/{% endif %}"><button class="dislike" type="submit"><span class="reaction-icon" aria-hidden="true">×</span>Не нравится</button></form>
               {% if book.reaction %}<span class="reaction">Ваш выбор: {{ 'лайк' if book.reaction == 'like' else 'дизлайк' }}</span>{% endif %}
             </div>
           </article>
