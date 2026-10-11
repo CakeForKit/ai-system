@@ -140,7 +140,7 @@ class ContentRecommender:
         likes: dict[int, float],
         dislikes: dict[int, float],
         now: float,
-        limit: int = 20,
+        limit: int | None = None,
     ) -> list[RankedBook]:
         """Ранжирует непрореагированные книги по PCv3-оценке релевантности."""
         if not likes:
@@ -166,7 +166,8 @@ class ContentRecommender:
                 score -= DISLIKE_PENALTY * negative / disliked_weight_sum
             ranked.append(RankedBook(candidate_id, score))
 
-        return sorted(ranked, key=lambda item: item.score, reverse=True)[:limit]
+        ranked.sort(key=lambda item: item.score, reverse=True)
+        return ranked if limit is None else ranked[:limit]
 
 
 def prepare_books(csv_path: str) -> pd.DataFrame:

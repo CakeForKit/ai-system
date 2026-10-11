@@ -50,13 +50,13 @@ app.add_middleware(SessionMiddleware, secret_key=os.getenv("APP_SESSION_SECRET",
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 
 
-def user_state(request: Request) -> dict[str, dict[int, float] | list[int]]:
+def user_state(request: Request) -> dict[str, dict[int, float]]:
     session_id = request.session.setdefault("session_id", secrets.token_urlsafe(18))
     states = getattr(app.state, "users", None)
     if states is None:
         app.state.users = {}
         states = app.state.users
-    return states.setdefault(session_id, {"likes": {}, "dislikes": {}, "last_search": []})
+    return states.setdefault(session_id, {"likes": {}, "dislikes": {}})
 
 
 def selected_options(column: str) -> list[str]:
@@ -153,11 +153,9 @@ def render_page(request: Request, book_ids: list[int], *, title: str, view: str,
 
 
 @app.get("/", response_class=HTMLResponse)
-async def catalog(request: Request, view: str = "all") -> HTMLResponse:
+async def catalog(request: Request) -> HTMLResponse:
     state = user_state(request)
-    if view == "search":
-        return render_page(request, state["last_search"], title="Результаты поиска", view="search", state=state)
-    return render_page(request, books["id"].astype(int).tolist(), title="Все книги", view="all", state=state)
+    return render_page(request, books["id"].astype(int).tolist(), title="Все книги", view="catalog", state=state)
 
 
 @app.post("/search", response_class=HTMLResponse)
@@ -173,15 +171,41 @@ async def search(
     subsection: Annotated[str, Form()] = "",
     cycle: Annotated[str, Form()] = "",
     translation: Annotated[str, Form()] = "",
+    scope: Annotated[str, Form()] = "catalog",
 ) -> HTMLResponse:
     filters = locals().copy()
     filters = {key: filters[key] for key in ("query", "year_from", "year_to", "pages_from", "pages_to", "age", "section", "subsection", "cycle", "translation")}
     state = user_state(request)
     book_ids, errors = search_books(filters)
+    if scope not in {"catalog", "recommendations"}:
+        errors.append("Недопустимая область поиска.")
+    if scope == "recommendations" and not errors:
+        ranked = recommender.rank(state["likes"], state["dislikes"], time.time())
+        allowed_ids = set(book_ids)
+        book_ids = [item.book_id for item in ranked if item.book_id in allowed_ids]
+        scores = {item.book_id: item.score for item in ranked}
+        logger.info("Recommendation search: filters=%s; results=%s", filters, book_ids)
+        return render_page(
+            request,
+            book_ids,
+            title="Лента рекомендаций PCv3 — результаты поиска",
+            view="recommendations",
+            state=state,
+            errors=errors,
+            filters=filters,
+            scores=scores,
+        )
     if not errors:
-        state["last_search"] = book_ids
-        logger.info("Search: filters=%s; results=%s", filters, book_ids)
-    return render_page(request, book_ids, title="Результаты поиска", view="search", state=state, errors=errors, filters=filters)
+        logger.info("Catalog search: filters=%s; results=%s", filters, book_ids)
+    return render_page(
+        request,
+        book_ids,
+        title="Каталог — результаты поиска",
+        view="catalog",
+        state=state,
+        errors=errors,
+        filters=filters,
+    )
 
 
 @app.post("/feedback/{book_id}")
