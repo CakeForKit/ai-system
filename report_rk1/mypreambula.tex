@@ -1,0 +1,231 @@
+% ПРИНУДИТЕЛЬНО отключаем генерацию Type 3
+\pdfminorversion=7
+\pdfcompresslevel=0
+\pdfobjcompresslevel=0
+% \pdfmapfile{+tempora.map} % принудительно используем map-файл tempora
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel} 
+\usepackage{amssymb,amsfonts,amsmath,mathtext,cite,enumerate,float}
+\usepackage{pgfplots}
+\usepackage{graphicx}
+%\usepackage{tocloft}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{tempora} 
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{indentfirst} 
+\usepackage{pdfpages} 
+\usepackage{enumerate,letltxmacro}
+\usepackage{threeparttable} %% 
+\usepackage[colorlinks=true, linkcolor=black]{hyperref}
+\usepackage{flafter} 
+\usepackage{enumitem}
+\usepackage{multirow} 
+\usepackage{epstopdf}   %% 
+\usepackage{tabularx}    %% 
+\usepackage{xltabular}   %% 
+\usepackage{siunitx}   %% 
+\usepackage{subcaption}   %% 
+\usepackage{booktabs}   %% 
+\usepackage{physics}   %% 
+\usepackage{pdflscape}   %% 
+\usepackage[scaled=0.85]{DejaVuSansMono}   %% 
+\renewcommand{\ttdefault}{DejaVuSansMono-TLF}   %% 
+\usepackage{xparse}   %% 
+\usepackage[most]{tcolorbox}   %% 
+
+\usepackage{xurl}
+\usepackage{type1ec}
+
+\usepackage[figure,table]{totalcount} 
+\usepackage{lastpage} 
+
+%% start
+\newcounter{source}   
+\DeclareTotalCounter{source}  
+\makeatletter  
+\let\oldbibitem\bibitem  
+\renewcommand{\bibitem}{\stepcounter{source}\oldbibitem} 
+\makeatother  
+%%  end
+
+\usepackage{placeins} 
+
+\usepackage{url}
+\urlstyle{same}
+\usepackage{cmap} 
+
+
+% \usepackage{letltxmacro} 
+% \usepackage{flafter} 
+
+
+
+% литература biber
+%\usepackage[backend=biber, style=gost-numeric]{biblatex}
+%\addbibresource{lib.bib}
+
+
+\makeatletter
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\makeatother
+
+
+\geometry{left=30mm}
+\geometry{right=15mm}
+\geometry{top=20mm}
+\geometry{bottom=20mm}
+
+\setlength{\parindent}{1.25cm}
+
+\usepackage{microtype}
+\sloppy	
+
+\onehalfspacing 
+
+\frenchspacing	
+
+
+
+\makeatletter
+\renewcommand\LARGE{\@setfontsize\LARGE{22pt}{20}}
+\renewcommand\Large{\@setfontsize\Large{20pt}{20}}
+\renewcommand\large{\@setfontsize\large{16pt}{20}}
+\makeatother
+
+\newcommand{\ssr}[1]{
+	\chapter*{#1}
+%	\begin{center}
+%		\large\bfseries{#1}
+%	\end{center}
+	\addcontentsline{toc}{chapter}{#1}  }
+
+
+\usepackage{titlesec}
+\titleformat{\chapter}{\large\bfseries}{\thechapter}{14pt}{\large\bfseries}
+\titleformat{name=\chapter,numberless}{}{}{0pt}{\large\bfseries\centering}	
+\titleformat{\section}{\large\bfseries}{\thesection}{14pt}{\large\bfseries}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{14pt}{\large\bfseries}
+\titleformat{\subsubsection}{\large\bfseries}{\thesubsection}{14pt}{\large\bfseries}
+
+\titlespacing{\chapter}{12.5mm}{-28pt}{10pt}
+\titlespacing{\section}{12.5mm}{10pt}{10pt}
+\titlespacing{\subsection}{12.5mm}{10pt}{10pt}
+\titlespacing{\subsubsection}{12.5mm}{10pt}{10pt}
+
+\titlespacing{name=\chapter,numberless}{12.5mm}{-28pt}{10pt}
+\titlespacing{name=\section,numberless}{12.5mm}{10pt}{10pt}
+\titlespacing{name=\subsection,numberless}{12.5mm}{10pt}{10pt}
+\titlespacing{name=\subsubsection,numberless}{12.5mm}{10pt}{10pt}
+
+\usepackage{longtable} 
+\usepackage{array}    
+\captionsetup[longtable]{justification=raggedright, singlelinecheck=off, labelsep=endash, margin=0.5\tabcolsep}
+% \usepackage{multirow} 
+
+\newcommand{\specialcell}[2][c]{
+	\begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+
+
+% \usepackage{enumerate} 
+
+
+% \usepackage{enumitem}
+\def\labelitemi{---}
+\def\labelitemii{---}
+\def\labelitemiii{---}
+\setlist[itemize]{leftmargin=1.25cm, itemindent=0.65cm}
+\setlist[enumerate]{leftmargin=1.25cm, itemindent=0.55cm}
+
+\captionsetup[figure]{name={Рисунок}, justification=centering, labelsep=period}
+
+
+% \usepackage{graphicx}
+\newcommand{\imgScale}[3] {
+	\begin{figure}[h!]
+		\center{\includegraphics[scale=#1]{img/#2}} 
+		\caption{#3}
+		\label{img:#2}
+	\end{figure}
+}
+
+\newcommand{\imgh}[3] {
+	\begin{figure}[h!]
+		\center{\includegraphics[height=#1]{img/#2}}
+		\caption{#3}
+		\label{img:#2}
+	\end{figure}
+}
+\newcommand{\imgw}[3] {
+	\begin{figure}[h!]
+		\center{\includegraphics[width=#1]{img/#2}}
+		\caption{#3}
+		\label{img:#2}
+	\end{figure}
+}
+\newcommand{\imghperp}[3] {
+	\begin{figure}[h!]
+		\center{\includegraphics[angle=90, height=#1]{img/#2}}
+		\caption{#3}
+		\label{img:#2}
+	\end{figure}
+}
+\newcommand{\boximg}[3] {
+	\begin{figure}[h]
+		\center{\fbox{\includegraphics[height=#1]{img/#2}}}
+		\caption{#3}
+		\label{img:#2}
+	\end{figure}
+}
+
+
+
+% \usepackage{listings}
+% \usepackage{xcolor}
+
+
+
+
+% Оформление MATLAB-листингов
+\lstset{
+	basicstyle=\small\ttfamily,
+	frame=single,
+	captionpos=b,
+	breaklines=true,
+	tabsize=4
+}
+
+\newcommand{\dlr}{\mbox{\textdollar}}
+
+
+
+\makeatletter
+\renewcommand{\@biblabel}[1]{#1.}
+\makeatother
+
+
+%  \usepackage[unicode,pdftex]{hyperref}
+\hypersetup{hidelinks}  
+
+\usepackage{cleveref}
+
+\makeatletter
+\renewcommand*{\l@chapter}[2]{
+	\ifnum \c@tocdepth>\m@ne
+	\addpenalty{-\@highpenalty}
+	\vskip 1em \@plus.2em
+	\@dottedtocline{0}{0pt}{1.5em}{\bfseries #1}{\bfseries #2}
+	\fi
+}
+\makeatother
+
+\makeatletter
+\@ifpackageloaded{fontenc}{%
+	\message{^^J=== Fontenc loaded with options: \f@encoding ===^^J}%
+}{}
+\makeatother
