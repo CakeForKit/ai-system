@@ -131,7 +131,7 @@ class ContentRecommender:
         )
 
     def _recency_weight(self, action_time: float, now: float, first_action_time: float) -> float:
-        """Логарифмическое затухание из формулы PCv3 в README."""
+        """Логарифмическое затухание из формулы в README."""
         elapsed_since_first = max(0.0, now - first_action_time)
         if elapsed_since_first == 0:
             return 1.0
@@ -242,6 +242,7 @@ def to_public_books(books: pd.DataFrame, book_ids: Iterable[int]) -> list[dict[s
                 "author": row["Автор"],
                 "section": row["Раздел"],
                 "subsection": row["Подраздел"],
+                "subsubsection": row["Подподраздел"],
                 "year": int(row["Год публикации"]),
                 "pages": int(row["_pages"]),
                 "age": int(row["_age"]),

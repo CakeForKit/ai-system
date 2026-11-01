@@ -1,3 +1,7 @@
 .venv
 .idea
 AGENTS.md
+.aux
+.log
+.out
+.gz

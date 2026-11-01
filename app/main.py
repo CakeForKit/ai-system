@@ -68,7 +68,7 @@ async def lifespan(_: FastAPI):
     logger.info("Application stopped")
 
 
-app = FastAPI(title="Книжный рекомендатель PCv3", lifespan=lifespan)
+app = FastAPI(title="Книжный рекомендатель", lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("APP_SESSION_SECRET", "development-" + secrets.token_urlsafe(24)))
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 
@@ -211,7 +211,7 @@ async def search(
         return render_page(
             request,
             book_ids,
-            title="Лента рекомендаций PCv3 — результаты поиска",
+            title="Лента рекомендаций",
             view="recommendations",
             state=state,
             errors=errors,
@@ -272,4 +272,4 @@ async def recommendations(request: Request) -> HTMLResponse:
     ids = [item.book_id for item in ranked]
     scores = {item.book_id: item.score for item in ranked}
     logger.info("Recommendations: likes=%s; dislikes=%s; results=%s", sorted(state["likes"]), sorted(state["dislikes"]), [(item.book_id, round(item.score, 4)) for item in ranked])
-    return render_page(request, ids, title="Лента рекомендаций PCv3", view="recommendations", state=state, scores=scores)
+    return render_page(request, ids, title="Лента рекомендаций", view="recommendations", state=state, scores=scores)

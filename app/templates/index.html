@@ -55,7 +55,7 @@
             <div class="book-title">{{ book.id }}. {{ book.title }}</div>
             <div class="author">{{ book.author }}</div>
             <dl>
-              <div><dt>Категория</dt><dd>{{ book.section }} / {{ book.subsection }}</dd></div>
+              <div><dt>Категория</dt><dd>{{ book.section }} / {{ book.subsection }}{% if book.subsubsection != '—' %} / {{ book.subsubsection }}{% endif %}</dd></div>
               <div><dt>Год</dt><dd>{{ book.year }}</dd></div>
               <div><dt>Страницы</dt><dd>{{ book.pages }}</dd></div>
               <div><dt>Возраст</dt><dd>{{ book.age }}+</dd></div>
